@@ -1,11 +1,11 @@
 # Sentiment Analysis
 
-This repository contains a simple sentiment classifier built with logistic regression on the **Amazon US Wireless Reviews** dataset. It demonstrates a complete pipeline from preprocessing and vectorization with TF‑IDF to model training and evaluation.
+This repository contains a simple sentiment classifier built with an XGBoost classifier on the **Amazon US Wireless Reviews** dataset. It demonstrates a complete pipeline from preprocessing and vectorization with TF‑IDF to model training and evaluation. Hyperparameter tuning is performed using `hyperopt`.
 
 ## Contents
 
 - `main_core/sentiment_analysis_final.py` – End‑to‑end training and inference script
-- `models/` – Pretrained logistic regression model
+- `models/` – Pretrained XGBoost model
 - `vectorizer/` – Saved `TfidfVectorizer`
 - `.idea/` – Development environment settings (can be ignored)
 
@@ -24,6 +24,8 @@ The script relies on Python 3.9 and the following packages:
 - `contractions`
 - `seaborn`
 - `matplotlib`
+- `xgboost`
+- `hyperopt`
 
 Create a virtual environment (optional) and install the dependencies from `requirements.txt`:
 
@@ -46,7 +48,7 @@ Move the resulting `amazon_reviews_us_Wireless_v1_00.tsv` file to a convenient l
 
 ### Training the Model
 
-The repository already contains a trained model (`models/saga_logistic_regression.model`) and vectorizer (`vectorizer/tfidf.vec`). To retrain from scratch, set `fit = True` near the middle of `main_core/sentiment_analysis_final.py` and run the script:
+The repository already contains a trained model (`models/xgb_classifier.model`) and vectorizer (`vectorizer/tfidf.vec`). To retrain from scratch, set `fit = True` near the middle of `main_core/sentiment_analysis_final.py` and run the script:
 
 ```bash
 python main_core/sentiment_analysis_final.py
@@ -67,7 +69,7 @@ Sentiment_Analysis/
 ├── main_core/
 │   └── sentiment_analysis_final.py
 ├── models/
-│   └── saga_logistic_regression.model
+│   └── xgb_classifier.model
 ├── vectorizer/
 │   └── tfidf.vec
 └── .idea/

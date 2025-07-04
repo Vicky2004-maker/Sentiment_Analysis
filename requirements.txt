@@ -7,3 +7,5 @@ pandarallel
 joblib
 seaborn
 matplotlib
+xgboost
+hyperopt

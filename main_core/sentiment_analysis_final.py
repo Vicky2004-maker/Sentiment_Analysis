@@ -6,7 +6,9 @@ from nltk import word_tokenize
 from sklearn.metrics import confusion_matrix
 from sklearn.model_selection import train_test_split
 from sklearn.feature_extraction.text import TfidfVectorizer
-from sklearn.linear_model import LogisticRegression
+from xgboost import XGBClassifier
+from hyperopt import hp, tpe, Trials, fmin, STATUS_OK
+from sklearn.model_selection import cross_val_score
 from pandarallel import pandarallel as pll
 from nltk.stem import WordNetLemmatizer
 import joblib
@@ -60,27 +62,69 @@ print(x_test.shape, y_test.shape)
 # %%
 
 fit = False
-saga_lr_file = 'D:/PyCharm_Projects/Sentiment_Analysis/models/saga_logistic_regression.model'
+xgb_file = 'D:/PyCharm_Projects/Sentiment_Analysis/models/xgb_classifier.model'
 
 if fit:
-    saga_lr = LogisticRegression(solver='saga', max_iter=int(10e4), n_jobs=-1)
-    saga_lr.fit(x_train, y_train)
-    joblib.dump(saga_lr, saga_lr_file)
+    def objective(params):
+        clf = XGBClassifier(
+            n_estimators=int(params['n_estimators']),
+            max_depth=int(params['max_depth']),
+            learning_rate=params['learning_rate'],
+            subsample=params['subsample'],
+            colsample_bytree=params['colsample_bytree'],
+            eval_metric='logloss',
+            n_jobs=-1,
+            random_state=1,
+        )
+        score = cross_val_score(clf, x_train, y_train, scoring='accuracy', cv=3).mean()
+        return {'loss': -score, 'status': STATUS_OK}
+
+    space = {
+        'n_estimators': hp.quniform('n_estimators', 50, 300, 10),
+        'max_depth': hp.quniform('max_depth', 3, 10, 1),
+        'learning_rate': hp.loguniform('learning_rate', np.log(0.01), np.log(0.2)),
+        'subsample': hp.uniform('subsample', 0.6, 1.0),
+        'colsample_bytree': hp.uniform('colsample_bytree', 0.6, 1.0),
+    }
+
+    trials = Trials()
+    best = fmin(
+        fn=objective,
+        space=space,
+        algo=tpe.suggest,
+        max_evals=20,
+        trials=trials,
+        rstate=np.random.default_rng(1),
+    )
+    best['n_estimators'] = int(best['n_estimators'])
+    best['max_depth'] = int(best['max_depth'])
+    xgb_clf = XGBClassifier(
+        n_estimators=best['n_estimators'],
+        max_depth=best['max_depth'],
+        learning_rate=best['learning_rate'],
+        subsample=best['subsample'],
+        colsample_bytree=best['colsample_bytree'],
+        eval_metric='logloss',
+        n_jobs=-1,
+        random_state=1,
+    )
+    xgb_clf.fit(x_train, y_train)
+    joblib.dump(xgb_clf, xgb_file)
 else:
-    if not os.path.isfile(saga_lr_file):
-        saga_lr = LogisticRegression(solver='saga', max_iter=int(10e4), n_jobs=-1)
-        saga_lr.fit(x_train, y_train)
-        joblib.dump(saga_lr, saga_lr_file)
+    if not os.path.isfile(xgb_file):
+        xgb_clf = XGBClassifier(eval_metric='logloss', n_jobs=-1, random_state=1)
+        xgb_clf.fit(x_train, y_train)
+        joblib.dump(xgb_clf, xgb_file)
     else:
-        saga_lr = joblib.load(saga_lr_file)
+        xgb_clf = joblib.load(xgb_file)
 
 # %%
-print("Accuracy of the model is", saga_lr.score(x_test, y_test) * 100, "% - Logistic Regression")
+print("Accuracy of the model is", xgb_clf.score(x_test, y_test) * 100, "% - XGBoost")
 # %%
 text = ""
 test_data = vec.transform(
     [(preprocess(text, punc, contractions.fix, lemm.lemmatize, word_tokenize))])
-y_pred = saga_lr.predict(x_test)
+y_pred = xgb_clf.predict(x_test)
 
 # %%
 cm = confusion_matrix(y_test, y_pred)
