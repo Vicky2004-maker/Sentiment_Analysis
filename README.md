@@ -13,7 +13,7 @@ This repository contains a simple sentiment classifier built with logistic regre
 
 ### Requirements
 
-The script relies on the following Python packages:
+The script relies on Python 3.9 and the following packages:
 
 - `pandas`
 - `numpy`
@@ -25,12 +25,12 @@ The script relies on the following Python packages:
 - `seaborn`
 - `matplotlib`
 
-Create a virtual environment (optional) and install the dependencies:
+Create a virtual environment (optional) and install the dependencies from `requirements.txt`:
 
 ```bash
 python -m venv .venv
 source .venv/bin/activate
-pip install pandas numpy scikit-learn nltk pandarallel joblib contractions seaborn matplotlib
+pip install -r requirements.txt
 ```
 
 ### Dataset
